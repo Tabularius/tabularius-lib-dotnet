@@ -2,8 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <PackageId>TabulariusLib</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>Michael Warneke</Authors>
+    <Description>Library to handle accounting journal entries</Description>
+    <PackageTags>Accounting;Journal</PackageTags>
+
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>$(SolutionName).$(MSBuildProjectName)</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>TabulariusLib</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
 
 </Project>
