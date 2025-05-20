@@ -2,9 +2,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-using tabularius.TabulariusLib.Interfaces;
+using TabulariusLib.Interfaces;
 
-namespace tabularius.TabulariusLib.Entities;
+namespace TabulariusLib.Entities;
 
 [Table("Accounts")]
 public sealed record Account : IAccount

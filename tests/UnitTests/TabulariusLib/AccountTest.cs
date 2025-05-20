@@ -1,5 +1,5 @@
 using System;
-using tabularius.TabulariusLib.Entities;
+using TabulariusLib.Entities;
 
 using Xunit;
 

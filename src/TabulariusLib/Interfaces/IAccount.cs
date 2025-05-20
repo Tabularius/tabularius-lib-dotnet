@@ -1,8 +1,8 @@
 using System;
 
-using tabularius.TabulariusLib.Entities;
+using TabulariusLib.Entities;
 
-namespace tabularius.TabulariusLib.Interfaces
+namespace TabulariusLib.Interfaces
 {
     internal interface IAccount
     {
