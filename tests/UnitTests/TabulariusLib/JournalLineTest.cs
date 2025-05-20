@@ -40,7 +40,7 @@ public class JournalLineTest
         // Arrange
         var id = Guid.NewGuid();
         var description = "Test Description";
-        string? accountID = null;
+        string accountID = "";
         var debit = 100m;
         var credit = 0m;
 

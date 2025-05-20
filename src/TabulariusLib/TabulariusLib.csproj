@@ -4,24 +4,23 @@
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>TabulariusLib</PackageId>
     <Version>0.0.2</Version>
-    <tags>Accounting Journal Balance Profit</tags>
-    <releaseNotes>Initial release.</releaseNotes>
     <Authors>Michael Warneke</Authors>
     <Description>Library to handle accounting journal entries</Description>
-    <PackageTags>Accounting;Journal</PackageTags>
-
+    <PackageTags>Accounting;Journal;Balance;Profit</PackageTags>
+    <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
+    <PackageProjectUrl>https://github.com/Tabularius/tabularius-lib-dotnet</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://github.com/Tabularius/tabularius-lib-dotnet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright © 2025 Michael Warneke</Copyright>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>$(SolutionName).$(MSBuildProjectName)</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AssemblyName>TabulariusLib</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <projectUrl>https://github.com/Tabularius/tabularius-lib-dotnet</projectUrl>
-    <license type="expression">Apache-2.0</license>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <repository type="git" url="https://github.com/Tabularius/tabularius-lib-dotnet.git" />
-    <copyright>Copyright © 2025 Michael Warneke</copyright>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
 </Project>
