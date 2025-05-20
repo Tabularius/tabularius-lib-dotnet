@@ -10,6 +10,7 @@ https://github.com/Tabularius/tabularius-lib-dotnet
 
 ## How to use (taken from unit tests)
 ### Create Account codes
+```
 public static class ExampleAccountCodes
 {
     public const string Cash = "1000";
@@ -19,8 +20,9 @@ public static class ExampleAccountCodes
     public const string RetainedEarnings = "3100";
     public const string Payable = "2000";
 }
-
+```
 ### Create Accounts
+```
 public static List<Account> GetExampleAccounts()
 {
     return new List<Account>
@@ -33,8 +35,9 @@ public static List<Account> GetExampleAccounts()
         Account.Create("Payable", "Accounts Payable", ExampleAccountCodes.Payable, AccountType.Liability, null, "Credit")
     };
 }
-
+```
 ### Create Journal
+```
 public static Journal GetExampleJournal()
 {
     var accounts = GetExampleAccounts();
@@ -102,21 +105,26 @@ public static Journal GetExampleJournal()
 
     return journal;
 }
-
+```
 ### Create Ledger
+```
 Ledger ledger = Ledger.FromJournal("Main Ledger", "Test Ledger", journal, accounts);
-
+```
 ### Create Trial Balance
+```
 TrialBalance trialBalance = TrialBalance.FromLedger("TB", "Test TB", new DateTime(2024, 12, 31), ledger);
+```
 
 ### Create Profit and Loss Statement
+```
 ProfitAndLossStatement plStatement = ProfitAndLossStatement.FromLedger("P&L", "Test P&L", new DateTime(2024, 1, 1), new DateTime(2024, 12, 31), ledger);
-
+```
 ### Create Balance Sheet
+```
 TrialBalance closedTrialBalance = trialBalance.CloseAccounts(retainedEarnings); // The equity account for the P&L closing
 
 // Create Balance from closed trial balance
 Balance balance = Balance.FromTrialBalance("Balance Sheet", "Test Balance", DateTime.Today, closedTrialBalance);
-
+```
 ## License
 Apache-2.0
