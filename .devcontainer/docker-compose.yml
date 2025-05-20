@@ -1,0 +1,11 @@
+services:
+  tabularius-dotnet-lib-dev:  # This is the service name, which becomes the container name (or part of it)
+    image: mcr.microsoft.com/devcontainers/dotnet:9.0
+    env_file:
+      - devcontainer.env
+    volumes:
+      - ../:/workspaces/tabularius-dotnet-lib-dev  # Mount your project directory
+    ports:
+      - "5005:5005"
+      - "5006:5006"
+    command: sleep infinity # Keeps the container running

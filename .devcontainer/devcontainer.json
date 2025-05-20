@@ -1,0 +1,56 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+{
+  "name": "tabularius-dotnet-lib-dev",
+  "secrets": {
+    "GIT_USER_EMAIL": {
+      "description": "Your Git user email for commits"
+    },
+    "GIT_USER_NAME": {
+      "description": "Your Git user name for commits"
+    }
+  },
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "tabularius-dotnet-lib-dev", // Match the service name in docker-compose.yml
+  "workspaceFolder": "/workspaces/tabularius-dotnet-lib-dev", // Match the mount in docker-compose.yml
+
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "formulahendry.dotnet-test-explorer",
+        "ms-vscode.vscode-node-azure-pack",
+        "ms-azuretools.vscode-docker",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "redhat.vscode-yaml",
+        "yy0931.vscode-sqlite3-editor"
+      ]
+    }
+  },
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [5000, 5001],
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "sudo dotnet workload update; dotnet dev-certs https --trust; git config --global user.email \"$GIT_USER_EMAIL\"; git config --global user.name \"$GIT_USER_NAME\""
+
+  // [Optional] To reuse of your local HTTPS dev cert, first export it locally using this command:
+  //  * Windows PowerShell:
+  //     dotnet dev-certs https --trust; dotnet dev-certs https -ep "$env:USERPROFILE/.aspnet/https/aspnetapp.pfx" -p "SecurePwdGoesHere"
+  //  * macOS/Linux terminal:
+  //     dotnet dev-certs https --trust; dotnet dev-certs https -ep "${HOME}/.aspnet/https/aspnetapp.pfx" -p "SecurePwdGoesHere"
+  //
+  // Next, after running the command above, uncomment lines in the 'mounts' and 'remoteEnv' lines below,
+  // and open / rebuild the container so the settings take effect.
+  //
+  // "mounts": [
+  // 	// "source=${env:HOME}${env:USERPROFILE}/.aspnet/https,target=/home/vscode/.aspnet/https,type=bind"
+  // ],
+  // "remoteEnv": {
+  // 	// "ASPNETCORE_Kestrel__Certificates__Default__Password": "SecurePwdGoesHere",
+  // 	// "ASPNETCORE_Kestrel__Certificates__Default__Path": "/home/vscode/.aspnet/https/aspnetapp.pfx",
+  // },
+}
