@@ -3,7 +3,9 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>TabulariusLib</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
+    <tags>Accounting Journal Balance Profit</tags>
+    <releaseNotes>Initial release.</releaseNotes>
     <Authors>Michael Warneke</Authors>
     <Description>Library to handle accounting journal entries</Description>
     <PackageTags>Accounting;Journal</PackageTags>
@@ -14,6 +16,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AssemblyName>TabulariusLib</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <projectUrl>https://github.com/Tabularius/tabularius-lib-dotnet</projectUrl>
+    <license type="expression">Apache-2.0</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <repository type="git" url="https://github.com/Tabularius/tabularius-lib-dotnet.git" />
+    <copyright>Copyright © 2025 Michael Warneke</copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
 </Project>
