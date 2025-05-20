@@ -3,6 +3,7 @@ name: .NET Build and Test
 on:
   pull_request:
     branches: [ main ]  # Change 'main' if your default branch is different
+  workflow_dispatch:
 
 jobs:
   build-and-test:
