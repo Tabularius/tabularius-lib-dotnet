@@ -1,4 +1,4 @@
-namespace tabularius.TabulariusLib.Entities;
+namespace TabulariusLib.Entities;
 
 public enum AccountType
 {

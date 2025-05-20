@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
-namespace tabularius.TabulariusLib.Entities;
+namespace TabulariusLib.Entities;
 
 [Table("LedgerAccounts")]
 public sealed record LedgerAccount
