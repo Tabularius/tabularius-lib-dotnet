@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>TabulariusLib</PackageId>
-    <Version>0.0.2</Version>
+    <Version>0.0.3</Version>
     <Authors>Michael Warneke</Authors>
     <Description>Library to handle accounting journal entries</Description>
     <PackageTags>Accounting;Journal;Balance;Profit</PackageTags>

@@ -1,6 +1,6 @@
 using System;
 
-using tabularius.TabulariusLib.Entities;
+using TabulariusLib.Entities;
 
 namespace UnitTests.TabulariusLib;
 
