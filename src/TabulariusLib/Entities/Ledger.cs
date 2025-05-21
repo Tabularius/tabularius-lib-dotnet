@@ -1,95 +1,82 @@
+/*
+ * Ledger.cs
+ * 
+ * Represents a concrete implementation of a ledger entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable ledger entity, inheriting from LedgerBase<Ledger, LedgerAccount>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
 
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
+using TabulariusLib.BaseEntities;
 
 namespace TabulariusLib.Entities;
 
-
+/// <summary>
+/// Represents a concrete ledger entity in the Tabularius accounting library.
+/// Inherits from <see cref="LedgerBase{Ledger, LedgerAccount}"/> and provides factory methods for creation and mutation.
+/// </summary>
 [Table("Ledgers")]
-public sealed record Ledger
+public sealed record Ledger : LedgerBase<Ledger, LedgerAccount>
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public Guid Id { get; init; }
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private Ledger() : base() { }
 
-    [Required]
-    [MaxLength(256)]
-    public string Name { get; init; }
-
-    [Required]
-    [MaxLength(256)]
-    public string Description { get; init; }
-
-    // EF Core needs a settable property for navigation, but we expose only the read-only collection
-    private List<LedgerAccount> _ledgerAccounts { get; init; } = new();
-    public IReadOnlyCollection<LedgerAccount> LedgerAccounts => _ledgerAccounts.AsReadOnly();
-
-
-    // Parameterless constructor for EF Core
-    private Ledger()
-    { 
-        Name = string.Empty;
-        Description = string.Empty;
-    }
-
-    // Private full constructor for controlled creation and validation
+    /// <summary>
+    /// Private full constructor for controlled creation and validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the ledger.</param>
+    /// <param name="name">The name of the ledger.</param>
+    /// <param name="description">The description of the ledger.</param>
+    /// <param name="ledgerAccounts">The collection of ledger accounts.</param>
     private Ledger(Guid id, string name, string description, IEnumerable<LedgerAccount> ledgerAccounts)
-    {
-        if (id == Guid.Empty)
-            throw new ArgumentException($"'{nameof(id)}' cannot be empty.", nameof(id));
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-        if (ledgerAccounts == null)
-            throw new ArgumentNullException(nameof(ledgerAccounts));
+        : base(id, name, description, ledgerAccounts)
+    { }
 
-        Id = id;
-        Name = name;
-        Description = description;
-        _ledgerAccounts = ledgerAccounts.ToList();
-    }
-
-    // Factory method for creation with validation
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the ledger.</param>
+    /// <param name="name">The name of the ledger.</param>
+    /// <param name="description">The description of the ledger.</param>
+    /// <param name="ledgerAccounts">The collection of ledger accounts. If null, an empty collection is used.</param>
+    /// <returns>A new <see cref="Ledger"/> instance.</returns>
     public static Ledger Create(Guid id, string name, string description, IEnumerable<LedgerAccount>? ledgerAccounts)
         => new(id, name, description, ledgerAccounts ?? Enumerable.Empty<LedgerAccount>());
 
-    // Factory method to create a Ledger from journals and accounts
-    public static Ledger FromJournal(
-        string name,
-        string description,
-        Journal journal,
-        IEnumerable<Account> accounts)
-    {
-        // For each account, collect all JournalLines from all JournalEntries in the journal that match the account
-        var ledgerAccounts = accounts.Select(account =>
-        {
-            var entries = journal.JournalEntries
-                .SelectMany(entry => entry.JournalLines
-                    .Where(line => line.AccountID == account.Code)
-                    .Select(line => LedgerEntry.Create(
-                        Guid.NewGuid(),
-                        entry.Description,
-                        line.AccountID,
-                        entry.JournalEntryID,
-                        line.Debit,
-                        line.Credit,
-                        entry.Date,
-                        entry.Reference)))
-                .ToList();
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="id">The unique identifier for the ledger.</param>
+    /// <param name="name">The name of the ledger.</param>
+    /// <param name="description">The description of the ledger.</param>
+    /// <param name="ledgerAccounts">The collection of ledger accounts.</param>
+    /// <returns>A new <see cref="Ledger"/> instance with the specified values.</returns>
+    protected override Ledger CreateInstance(Guid id, string name, string description, IEnumerable<LedgerAccount> ledgerAccounts)
+        => new Ledger(id, name, description, ledgerAccounts);
 
-            return LedgerAccount.Create(
-                account.Code,
-                account.Name,
-                account.Type,
-                account.Description,
-                account.ParentCode ?? string.Empty,
-                account.Normally,
-                entries);
-        }).Where(la => la.LedgerEntries.Any()).ToList();
-
-        return new Ledger(Guid.NewGuid(), name, description, ledgerAccounts);
-    }
-
+    /// <summary>
+    /// Strongly-typed factory method to create a <see cref="Ledger"/> from a <see cref="Journal"/> and a collection of <see cref="Account"/>.
+    /// </summary>
+    /// <param name="name">The name of the ledger.</param>
+    /// <param name="description">The description of the ledger.</param>
+    /// <param name="journal">The journal instance to convert from.</param>
+    /// <param name="accounts">The collection of accounts to include in the ledger.</param>
+    /// <returns>A new <see cref="Ledger"/> instance created from the journal and accounts.</returns>
+    public static Ledger FromJournal(string name, string description, Journal journal, IEnumerable<Account> accounts)
+        => FromJournal<Journal, JournalEntry, JournalLine, Account, LedgerEntry>(
+            name,
+            description,
+            journal,
+            accounts,
+            LedgerEntry.Create,
+            LedgerAccount.Create,
+            (id, n, d, ledgerAccounts) => new Ledger(id, n, d, ledgerAccounts)
+        );
 }

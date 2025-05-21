@@ -1,72 +1,63 @@
+/*
+ * Journal.cs
+ * 
+ * Represents a concrete implementation of a journal entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable journal entity, inheriting from JournalBase<Journal, JournalEntry, JournalLine, Account>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
 
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
+using TabulariusLib.BaseEntities;
 
 namespace TabulariusLib.Entities;
 
-
+/// <summary>
+/// Represents a concrete journal entity in the Tabularius accounting library.
+/// Inherits from <see cref="JournalBase{Journal, JournalEntry, JournalLine, Account}"/> and provides factory methods for creation and mutation.
+/// </summary>
 [Table("Journals")]
-public sealed record Journal
+public sealed record Journal : JournalBase<Journal, JournalEntry, JournalLine, Account>
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public Guid Id { get; init; }
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private Journal() : base() { }
 
-    [Required]
-    [MaxLength(256)]
-    public string Name { get; init; }
-
-    [Required]
-    [MaxLength(256)]
-    public string Description { get; init; }
-
-    // EF Core needs a settable property for navigation, but we expose only the read-only collection
-    private List<JournalEntry> _journalEntries { get; init; } = new();
-    public IReadOnlyCollection<JournalEntry> JournalEntries => _journalEntries.AsReadOnly();
-
-    // Method to check if all journal entries are balanced
-    public bool AreAllEntriesBalanced => _journalEntries.All(entry => entry.IsBalanced);
-
-    // Parameterless constructor for EF Core
-    private Journal()
-    {
-        Name = string.Empty;
-        Description = string.Empty;
-    }
-
-    // Private full constructor for controlled creation and validation
+    /// <summary>
+    /// Private full constructor for controlled creation and validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the journal.</param>
+    /// <param name="name">The name of the journal.</param>
+    /// <param name="description">The description of the journal.</param>
+    /// <param name="entries">The collection of journal entries.</param>
     private Journal(Guid id, string name, string description, IEnumerable<JournalEntry> entries)
-    {
-        if (id == Guid.Empty)
-            throw new ArgumentException($"'{nameof(id)}' cannot be empty.", nameof(id));
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-        if (entries == null)
-            throw new ArgumentNullException(nameof(entries));
-        if (entries.Any(j => !j.IsBalanced))
-            throw new ArgumentException($"'{nameof(entries)}' contains unbalanced journal entries.", nameof(entries));
+        : base(id, name, description, entries)
+    { }
 
-        Id = id;
-        Name = name;
-        Description = description;
-        _journalEntries = entries.ToList();
-    }
-
-    // Factory method for creation with validation
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the journal.</param>
+    /// <param name="name">The name of the journal.</param>
+    /// <param name="description">The description of the journal.</param>
+    /// <param name="entries">The collection of journal entries. If null, an empty collection is used.</param>
+    /// <returns>A new <see cref="Journal"/> instance.</returns>
     public static Journal Create(Guid id, string name, string description, IEnumerable<JournalEntry>? entries)
         => new(id, name, description, entries ?? Enumerable.Empty<JournalEntry>());
 
-    // Mutation method with validation
-    public Journal AddJournalEntry(JournalEntry journalEntry)
-    {
-        if (journalEntry == null)
-            throw new ArgumentNullException(nameof(journalEntry));
-        if (!journalEntry.IsBalanced)
-            throw new ArgumentException($"'{nameof(journalEntry)}' is not balanced.", nameof(journalEntry));
-
-        return Create(Id, Name, Description, _journalEntries.Append(journalEntry));
-    }
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="id">The unique identifier for the journal.</param>
+    /// <param name="name">The name of the journal.</param>
+    /// <param name="description">The description of the journal.</param>
+    /// <param name="entries">The collection of journal entries.</param>
+    /// <returns>A new <see cref="Journal"/> instance with the specified values.</returns>
+    protected override Journal CreateInstance(Guid id, string name, string description, IEnumerable<JournalEntry> entries)
+        => new Journal(id, name, description, entries);
 }

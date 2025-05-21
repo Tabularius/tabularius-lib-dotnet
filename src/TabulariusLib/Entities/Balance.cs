@@ -1,160 +1,86 @@
+/*
+ * Balance.cs
+ * 
+ * Represents a concrete implementation of a balance entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable balance entity, inheriting from BalanceBase<BalanceEntry>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
 
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TabulariusLib.BaseEntities;
 
+namespace TabulariusLib.Entities;
 
-namespace TabulariusLib.Entities
+/// <summary>
+/// Represents a concrete balance entity in the Tabularius accounting library.
+/// Inherits from <see cref="BalanceBase{BalanceEntry}"/> and provides factory methods for creation and mutation.
+/// </summary>
+[Table("Balances")]
+public sealed record Balance : BalanceBase<BalanceEntry>
 {
-    [Table("Balances")]
-    public sealed record Balance
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid Id { get; init; }
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private Balance() : base() { }
 
-        [Required]
-        [MaxLength(256)]
-        public string Name { get; init; }
+    /// <summary>
+    /// Private full constructor for controlled creation and validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the balance.</param>
+    /// <param name="name">The name of the balance.</param>
+    /// <param name="description">The description of the balance.</param>
+    /// <param name="date">The date of the balance.</param>
+    /// <param name="entries">The collection of balance entries.</param>
+    private Balance(Guid id, string name, string description, DateTime date, IEnumerable<BalanceEntry> entries)
+        : base(id, name, description, date, entries)
+    { }
 
-        [Required]
-        [MaxLength(256)]
-        public string Description { get; init; }
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the balance.</param>
+    /// <param name="name">The name of the balance.</param>
+    /// <param name="description">The description of the balance.</param>
+    /// <param name="date">The date of the balance.</param>
+    /// <param name="entries">The collection of balance entries.</param>
+    /// <returns>A new <see cref="Balance"/> instance.</returns>
+    public static Balance Create(Guid id, string name, string description, DateTime date, IEnumerable<BalanceEntry> entries)
+        => new(id, name, description, date, entries);
 
-        [Required]
-        public DateTime Date { get; init; }
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="id">The unique identifier for the balance.</param>
+    /// <param name="name">The name of the balance.</param>
+    /// <param name="description">The description of the balance.</param>
+    /// <param name="date">The date of the balance.</param>
+    /// <param name="entries">The collection of balance entries.</param>
+    /// <returns>A new <see cref="Balance"/> instance with the specified values.</returns>
+    protected override BalanceBase<BalanceEntry> CreateInstance(Guid id, string name, string description, DateTime date, IEnumerable<BalanceEntry> entries)
+        => new Balance(id, name, description, date, entries);
 
-        private List<BalanceEntry> _balanceEntries { get; init; } = new();
-        public IReadOnlyCollection<BalanceEntry> BalanceEntries => _balanceEntries.AsReadOnly();
-
-        public decimal TotalAssets => _balanceEntries
-            .Where(entry => entry.Type == AccountType.Asset)
-            .Sum(entry => entry.Balance);
-        public decimal TotalLiabilities => _balanceEntries
-            .Where(entry => entry.Type == AccountType.Liability)
-            .Sum(entry => entry.Balance);
-        public decimal TotalEquity => _balanceEntries
-            .Where(entry => entry.Type == AccountType.Equity)
-            .Sum(entry => entry.Balance);
-        public decimal BalanceAmount => TotalAssets - (TotalLiabilities + TotalEquity);
-        public bool IsBalanced => BalanceAmount == 0;
-
-        private Balance()
-        { 
-            Name = string.Empty;
-            Description = string.Empty;
-            Date = default;
-        }
-
-        private Balance(Guid id, string name, string description, DateTime date, IEnumerable<BalanceEntry> entries)
-        {
-            if (id == Guid.Empty)
-                throw new ArgumentException($"'{nameof(id)}' cannot be empty.", nameof(id));
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-            if (string.IsNullOrWhiteSpace(description))
-                throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-            if (date == default)
-                throw new ArgumentException($"'{nameof(date)}' cannot be default.", nameof(date));
-            if (entries == null)
-                throw new ArgumentNullException(nameof(entries));
-
-            Id = id;
-            Name = name;
-            Description = description;
-            Date = date;
-            _balanceEntries = entries.ToList();
-        }
-
-        public static Balance Create(Guid id, string name, string description, DateTime date, IEnumerable<BalanceEntry> entries)
-            => new(id, name, description, date, entries);
-
-        // Factory method to create a Balance from a TrialBalance
-        public static Balance FromTrialBalance(string name, string description, DateTime date, TrialBalance trialBalance)
-        {
-            if (trialBalance == null)
-                throw new ArgumentNullException(nameof(trialBalance));
-            if (!trialBalance.IsClosed)
-                throw new InvalidOperationException($"Trial balance is not closed at {date:yyyy-MM-dd}.");
-            if (!trialBalance.IsBalanced)
-                    throw new InvalidOperationException($"Trial balance is not balanced at {date:yyyy-MM-dd}.");
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-            if (string.IsNullOrWhiteSpace(description))
-                throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-            if (date == default)
-                throw new ArgumentException($"'{nameof(date)}' cannot be default.", nameof(date));
-
-            var balanceEntries = trialBalance.TrialBalanceEntries
-                .Where(entry => entry.Type == AccountType.Asset 
-                             || entry.Type == AccountType.Liability 
-                             || entry.Type == AccountType.Equity)
-                .Select(entry => 
-                    BalanceEntry.Create(
-                        entry.AccountID,
-                        entry.AccountName,
-                        entry.Type,
-                        entry.ParentCode,
-                        entry.Normally == "Credit"
-                            ? entry.Credit - entry.Debit
-                            : entry.Debit - entry.Credit,
-                        entry.Normally))
-                .ToList();
-
-            return new Balance(Guid.NewGuid(), name, description, date, balanceEntries);
-        }
-    }
-
-    [Table("BalanceEntries")]
-    public sealed record BalanceEntry
-    {
-        [Key]
-        [MaxLength(256)]
-        public string AccountID { get; init; }
-
-        [Required]
-        [MaxLength(256)]
-        public string AccountName { get; init; }
-
-        [Required]
-        public AccountType Type { get; init; }
-
-        [MaxLength(256)]
-        public string? ParentCode { get; init; }
-
-        public decimal Balance { get; init; }
-
-        [Required]
-        [MaxLength(256)]
-        public string Normally { get; init; }
-
-        private BalanceEntry()
-        {
-            AccountID = string.Empty;
-            AccountName = string.Empty;
-            Type = AccountType.Asset;
-            ParentCode = null; 
-            Normally = string.Empty;
-        }
-
-        private BalanceEntry(string accountID, string accountName, AccountType type, string? parentCode, decimal balance, string normally)
-        {
-            if (string.IsNullOrWhiteSpace(normally))
-                throw new ArgumentException($"'{nameof(normally)}' cannot be null or empty.", nameof(normally));
-            if (string.IsNullOrWhiteSpace(accountID))
-                throw new ArgumentException($"'{nameof(accountID)}' cannot be null or empty.", nameof(accountID));
-            if (string.IsNullOrWhiteSpace(accountName))
-                throw new ArgumentException($"'{nameof(accountName)}' cannot be null or empty.", nameof(accountName));
-            if (balance < 0)
-                throw new ArgumentOutOfRangeException(nameof(balance), "Balance cannot be negative.");
-            AccountID = accountID;
-            AccountName = accountName;
-            Type = type;
-            ParentCode = string.IsNullOrWhiteSpace(parentCode) ? null : parentCode;
-            Balance = balance;
-            Normally = normally;
-        }
-
-        public static BalanceEntry Create(string accountID, string accountName, AccountType type, string? parentCode, decimal balance, string normally)
-            => new(accountID, accountName, type, parentCode, balance, normally);
-    }
+    /// <summary>
+    /// Strongly-typed factory method to create a <see cref="Balance"/> from a <see cref="TrialBalance"/>.
+    /// </summary>
+    /// <param name="name">The name of the balance.</param>
+    /// <param name="description">The description of the balance.</param>
+    /// <param name="date">The date of the balance.</param>
+    /// <param name="trialBalance">The trial balance instance to convert from.</param>
+    /// <returns>A new <see cref="Balance"/> instance created from the trial balance.</returns>
+    public static Balance FromTrialBalance(string name, string description, DateTime date, TrialBalance trialBalance)
+        => FromTrialBalance<Balance, TrialBalance, TrialBalanceEntry>(
+            name,
+            description,
+            date,
+            trialBalance,
+            // Entry factory: creates a BalanceEntry from a TrialBalanceEntry
+            BalanceEntry.Create,
+            // Balance factory: creates a Balance from the provided values
+            (id, n, d, dt, entries) => new Balance(id, n, d, dt, entries)
+        );
 }

@@ -1,118 +1,96 @@
+/*
+ * TrialBalance.cs
+ * 
+ * Represents a concrete implementation of a trial balance entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable trial balance entity, inheriting from TrialBalanceBase<TrialBalance, TrialBalanceEntry>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
 
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
+using TabulariusLib.BaseEntities;
 
 namespace TabulariusLib.Entities;
 
-
-[Table("TrailBalances")]
-public sealed record TrialBalance
+/// <summary>
+/// Represents a concrete trial balance entity in the Tabularius accounting library.
+/// Inherits from <see cref="TrialBalanceBase{TrialBalance, TrialBalanceEntry}"/> and provides factory methods for creation and mutation.
+/// </summary>
+[Table("TrialBalances")]
+public sealed record TrialBalance : TrialBalanceBase<TrialBalance, TrialBalanceEntry>
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public Guid Id { get; init; }
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private TrialBalance() : base() { }
 
-    [Required]
-    [MaxLength(256)]
-    public string Name { get; init; }
+    /// <summary>
+    /// Private full constructor for controlled creation and validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the trial balance.</param>
+    /// <param name="name">The name of the trial balance.</param>
+    /// <param name="description">The description of the trial balance.</param>
+    /// <param name="date">The date of the trial balance.</param>
+    /// <param name="entries">The collection of trial balance entries.</param>
+    /// <param name="isClosed">Indicates whether the trial balance is closed.</param>
+    private TrialBalance(Guid id, string name, string description, DateTime date, IEnumerable<TrialBalanceEntry> entries, bool isClosed = false)
+        : base(id, name, description, date, entries, isClosed)
+    { }
 
-    [Required]
-    [MaxLength(256)]
-    public string Description { get; init; }
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the trial balance.</param>
+    /// <param name="name">The name of the trial balance.</param>
+    /// <param name="description">The description of the trial balance.</param>
+    /// <param name="date">The date of the trial balance.</param>
+    /// <param name="entries">The collection of trial balance entries.</param>
+    /// <param name="isClosed">Indicates whether the trial balance is closed.</param>
+    /// <returns>A new <see cref="TrialBalance"/> instance.</returns>
+    public static TrialBalance Create(Guid id, string name, string description, DateTime date, IEnumerable<TrialBalanceEntry> entries, bool isClosed = false)
+        => new(id, name, description, date, entries, isClosed);
 
-    [Required]
-    public DateTime Date { get; init; }
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="id">The unique identifier for the trial balance.</param>
+    /// <param name="name">The name of the trial balance.</param>
+    /// <param name="description">The description of the trial balance.</param>
+    /// <param name="date">The date of the trial balance.</param>
+    /// <param name="entries">The collection of trial balance entries.</param>
+    /// <param name="isClosed">Indicates whether the trial balance is closed.</param>
+    /// <returns>A new <see cref="TrialBalance"/> instance with the specified values.</returns>
+    protected override TrialBalance CreateInstance(Guid id, string name, string description, DateTime date, IEnumerable<TrialBalanceEntry> entries, bool isClosed)
+        => new TrialBalance(id, name, description, date, entries, isClosed);
 
-    [Required]
-    public bool IsClosed { get; init; } = false;
+    /// <summary>
+    /// Strongly-typed factory method to create a <see cref="TrialBalance"/> from a <see cref="Ledger"/>.
+    /// </summary>
+    /// <param name="name">The name of the trial balance.</param>
+    /// <param name="description">The description of the trial balance.</param>
+    /// <param name="upToDate">The date up to which entries are considered.</param>
+    /// <param name="ledger">The ledger instance to convert from.</param>
+    /// <returns>A new <see cref="TrialBalance"/> instance created from the ledger.</returns>
+    public static TrialBalance FromLedger(string name, string description, DateTime upToDate, Ledger ledger)
+        => FromLedger<Ledger, LedgerAccount, LedgerEntry>(
+            name,
+            description,
+            upToDate,
+            ledger,
+            TrialBalanceEntry.Create,
+            (id, n, d, dt, entries) => new TrialBalance(id, n, d, dt, entries)
+        );
 
-    // EF Core needs a settable property for navigation, but we expose only the read-only collection
-    private List<TrialBalanceEntry> _trialBalanceEntries { get; init; } = new();
-    public IReadOnlyCollection<TrialBalanceEntry> TrialBalanceEntries => _trialBalanceEntries.AsReadOnly();
-
-    public decimal TotalDebit => _trialBalanceEntries.Sum(entry => entry.Debit);
-    public decimal TotalCredit => _trialBalanceEntries.Sum(entry => entry.Credit);
-    public decimal Balance => TotalCredit - TotalDebit;
-    public bool IsBalanced => Balance == 0;
-
-    // Parameterless constructor for EF Core
-    private TrialBalance()
-    {
-        Name = string.Empty;
-        Description = string.Empty;
-        Date = default;
-    }
-
-    // Private full constructor for controlled creation and validation
-    private TrialBalance(Guid id, string name, string description, DateTime date, IEnumerable<TrialBalanceEntry> trialBalanceEntries)
-    {
-        if (id == Guid.Empty)
-            throw new ArgumentException($"'{nameof(id)}' cannot be empty.", nameof(id));
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-        if (trialBalanceEntries == null)
-            throw new ArgumentNullException(nameof(trialBalanceEntries));
-
-        Id = id;
-        Name = name;
-        Description = description;
-        Date = date;
-        _trialBalanceEntries = trialBalanceEntries.ToList();
-    }
-
-    // Factory method for creation with validation
-    public static TrialBalance Create(Guid id, string name, string description, DateTime date, IEnumerable<TrialBalanceEntry> trialBalanceEntries)
-        => new(id, name, description, date, trialBalanceEntries);
-
-    // Factory method to create a TrialBalance from a Ledger
-    public static TrialBalance FromLedger(
-        string name,
-        string description,
-        DateTime upToDate,
-        Ledger ledger)
-    {
-        if (ledger == null)
-            throw new ArgumentNullException(nameof(ledger));
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-        if (ledger.LedgerAccounts == null || !ledger.LedgerAccounts.Any())
-            throw new ArgumentException($"No ledger accounts found.", nameof(ledger.LedgerAccounts));
-        if (ledger.LedgerAccounts.Any(account => account == null))
-            throw new ArgumentException($"Some ledger accounts are null.", nameof(ledger.LedgerAccounts));
-        if (ledger.LedgerAccounts.Any(account => account.LedgerEntries == null))
-            throw new ArgumentException($"Some ledger accounts have null ledger entries.", nameof(ledger.LedgerAccounts));
-        if (ledger.LedgerAccounts.Any(account => account.LedgerEntries.Any(entry => entry == null)))
-            throw new ArgumentException($"Some ledger entries are null.", nameof(ledger.LedgerAccounts));
-
-        var trialBalanceEntries = ledger.LedgerAccounts
-            .Select(account =>
-            {
-                var filteredEntries = account.LedgerEntries.Where(e => e.Date <= upToDate);
-                var debit = filteredEntries.Sum(e => e.Debit);
-                var credit = filteredEntries.Sum(e => e.Credit);
-                return TrialBalanceEntry.Create(
-                    account.Code,
-                    account.Name,
-                    account.Type,
-                    account.ParentCode,
-                    debit,
-                    credit,
-                    account.Normally);
-            })
-            .ToList();
-
-        if (!trialBalanceEntries.Any())
-            throw new ArgumentException($"No account entries found.", nameof(trialBalanceEntries));
-
-        return Create(Guid.NewGuid(), name, description, upToDate, trialBalanceEntries);
-    }
-
-    // Method to close accounts in the trial balance
+    /// <summary>
+    /// Closes the income and expense accounts in the trial balance and transfers the net income/loss to the specified equity account.
+    /// </summary>
+    /// <param name="closingEquityAccount">The equity account to which net income/loss will be transferred (e.g., Retained Earnings).</param>
+    /// <returns>A new <see cref="TrialBalance"/> instance with closed accounts and net income/loss transferred.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the trial balance is already closed or if the equity account is not found.</exception>
     public TrialBalance CloseAccounts(Account closingEquityAccount)
     {
         if (IsClosed)
@@ -129,9 +107,31 @@ public sealed record TrialBalance
         decimal totalExpense = expenseEntries.Sum(e => e.Debit - e.Credit);
         decimal netIncome = totalIncome - totalExpense;
 
-        // Close income and expense accounts (set their balances to zero)
-        var closedIncomeEntries = incomeEntries.Select(e => e with { Debit = e.Credit, Credit = e.Credit, Normally = e.Normally }).ToList();
-        var closedExpenseEntries = expenseEntries.Select(e => e with { Debit = e.Debit, Credit = e.Debit, Normally = e.Normally }).ToList();
+        // Close income accounts: set their balances to zero by moving their credit to debit
+        var closedIncomeEntries = incomeEntries.Select(e =>
+            TrialBalanceEntry.Create(
+                e.AccountID,
+                e.AccountName,
+                e.Type,
+                e.ParentCode,
+                e.Credit, // Debit set to Credit
+                e.Credit, // Credit unchanged
+                e.Normally
+            )
+        ).ToList();
+
+        // Close expense accounts: set their balances to zero by moving their debit to credit
+        var closedExpenseEntries = expenseEntries.Select(e =>
+            TrialBalanceEntry.Create(
+                e.AccountID,
+                e.AccountName,
+                e.Type,
+                e.ParentCode,
+                e.Debit, // Debit unchanged
+                e.Debit, // Credit set to Debit
+                e.Normally
+            )
+        ).ToList();
 
         // Add net income/loss to equity
         var closedEntries = new List<TrialBalanceEntry>();
@@ -155,6 +155,7 @@ public sealed record TrialBalance
                 );
             if (equityAccount == null)
                 throw new InvalidOperationException($"No equity account ('{closingEquityAccount.Name}') found to close net income/loss.");
+
             // If the account already exists in closedEntries, add to its value
             var retainedEarnings = closedEntries.FirstOrDefault(e => e.AccountID == equityAccount.AccountID);
             if (retainedEarnings != null)
@@ -162,16 +163,31 @@ public sealed record TrialBalance
                 var newDebit = retainedEarnings.Debit + (netIncome < 0 ? Math.Abs(netIncome) : 0);
                 var newCredit = retainedEarnings.Credit + (netIncome > 0 ? netIncome : 0);
                 closedEntries.Remove(retainedEarnings);
-                closedEntries.Add(retainedEarnings with { Debit = newDebit, Credit = newCredit, Normally = retainedEarnings.Normally });
+                closedEntries.Add(
+                    TrialBalanceEntry.Create(
+                        retainedEarnings.AccountID,
+                        retainedEarnings.AccountName,
+                        retainedEarnings.Type,
+                        retainedEarnings.ParentCode,
+                        newDebit,
+                        newCredit,
+                        retainedEarnings.Normally
+                    )
+                );
             }
             else
             {
-                closedEntries.Add(equityAccount with
-                {
-                    Debit = netIncome < 0 ? Math.Abs(netIncome) : 0,
-                    Credit = netIncome > 0 ? netIncome : 0,
-                    Normally = equityAccount.Normally
-                });
+                closedEntries.Add(
+                    TrialBalanceEntry.Create(
+                        equityAccount.AccountID,
+                        equityAccount.AccountName,
+                        equityAccount.Type,
+                        equityAccount.ParentCode,
+                        netIncome < 0 ? Math.Abs(netIncome) : 0,
+                        netIncome > 0 ? netIncome : 0,
+                        equityAccount.Normally
+                    )
+                );
             }
         }
 

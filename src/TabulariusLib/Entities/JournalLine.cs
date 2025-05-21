@@ -1,72 +1,66 @@
-using System.ComponentModel.DataAnnotations;
+/*
+ * JournalLine.cs
+ * 
+ * Represents a concrete implementation of a journal line entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable journal line entity, inheriting from JournalLineBase<JournalLine, Account>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
+
 using System.ComponentModel.DataAnnotations.Schema;
+using TabulariusLib.BaseEntities;
 
 namespace TabulariusLib.Entities;
 
-
-
+/// <summary>
+/// Represents a concrete journal line entity in the Tabularius accounting library.
+/// Inherits from <see cref="JournalLineBase{JournalLine, Account}"/> and provides factory methods for creation and mutation.
+/// </summary>
 [Table("JournalLines")]
-public sealed record JournalLine
+public sealed record JournalLine : JournalLineBase<JournalLine, Account>
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public Guid Id { get; init; }
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private JournalLine() : base() { }
 
-    [Required]
-    [MaxLength(256)]
-    public string Description { get; init; }
-
-    [Required]
-    public string AccountID { get; init; }
-
-    public decimal Debit { get; init; }
-    public decimal Credit { get; init; }
-
-    // Private parameterless constructor for EF Core
-    private JournalLine()
-    { 
-        Description = string.Empty;
-        AccountID = string.Empty;
-    }
-
-    // Private full constructor for controlled creation
+    /// <summary>
+    /// Private full constructor for controlled creation and validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the journal line.</param>
+    /// <param name="description">The description of the journal line.</param>
+    /// <param name="accountID">The account identifier associated with this journal line.</param>
+    /// <param name="debit">The debit amount.</param>
+    /// <param name="credit">The credit amount.</param>
     private JournalLine(Guid id, string description, string accountID, decimal debit, decimal credit)
-    {
-        if (id == Guid.Empty)
-            throw new ArgumentException($"'{nameof(id)}' cannot be empty.", nameof(id));
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-        if (string.IsNullOrWhiteSpace(accountID))
-            throw new ArgumentException($"'{nameof(accountID)}' cannot be null or empty.", nameof(accountID));
-        if (debit == 0 && credit == 0)
-            throw new ArgumentException($"Either '{nameof(debit)}' or '{nameof(credit)}' must be greater than zero.", nameof(debit));
-        if (debit != 0 && credit != 0)
-            throw new ArgumentException($"Either '{nameof(debit)}' or '{nameof(credit)}' must be zero, not both.", nameof(debit));
+        : base(id, description, accountID, debit, credit)
+    { }
 
-        Id = id;
-        Description = description;
-        AccountID = accountID;
-        Debit = debit;
-        Credit = credit;
-    }
-
-    // Factory method for creation with validation
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="id">The unique identifier for the journal line.</param>
+    /// <param name="description">The description of the journal line.</param>
+    /// <param name="accountID">The account identifier associated with this journal line.</param>
+    /// <param name="debit">The debit amount.</param>
+    /// <param name="credit">The credit amount.</param>
+    /// <returns>A new <see cref="JournalLine"/> instance.</returns>
     public static JournalLine Create(Guid id, string description, string accountID, decimal debit, decimal credit)
         => new JournalLine(id, description, accountID, debit, credit);
 
-    // Mutation methods with validation
-    public JournalLine WithDescription(string newDescription)
-        => Create(Id, newDescription, AccountID, Debit, Credit);
-
-    public JournalLine WithAccountID(string newAccountID)
-        => Create(Id, Description, newAccountID, Debit, Credit);
-
-    public JournalLine WithDebit(decimal newDebit)
-        => Create(Id, Description, AccountID, newDebit, Credit);
-
-    public JournalLine WithCredit(decimal newCredit)
-        => Create(Id, Description, AccountID, Debit, newCredit);
-
-    public JournalLine WithAccount(Account newAccount)
-        => Create(Id, Description, newAccount.Code, Debit, Credit);
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="id">The unique identifier for the journal line.</param>
+    /// <param name="description">The description of the journal line.</param>
+    /// <param name="accountID">The account identifier associated with this journal line.</param>
+    /// <param name="debit">The debit amount.</param>
+    /// <param name="credit">The credit amount.</param>
+    /// <returns>A new <see cref="JournalLine"/> instance with the specified values.</returns>
+    protected override JournalLine CreateInstance(Guid id, string description, string accountID, decimal debit, decimal credit)
+        => new JournalLine(id, description, accountID, debit, credit);
 }
