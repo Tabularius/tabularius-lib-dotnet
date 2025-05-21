@@ -1,67 +1,72 @@
-using System.ComponentModel.DataAnnotations;
+/*
+ * TrialBalanceEntry.cs
+ * 
+ * Represents a concrete implementation of a trial balance entry entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable trial balance entry entity, inheriting from TrialBalanceEntryBase<TrialBalanceEntry>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
+
 using System.ComponentModel.DataAnnotations.Schema;
+using TabulariusLib.BaseEntities;
 
 namespace TabulariusLib.Entities;
 
+/// <summary>
+/// Represents a concrete trial balance entry entity in the Tabularius accounting library.
+/// Inherits from <see cref="TrialBalanceEntryBase{TrialBalanceEntry}"/> and provides factory methods for creation and mutation.
+/// </summary>
 [Table("TrialBalanceEntries")]
-public sealed record TrialBalanceEntry
+public sealed record TrialBalanceEntry : TrialBalanceEntryBase<TrialBalanceEntry>
 {
-    [Key]
-    [Required]
-    [MaxLength(256)]
-    public string AccountID { get; init; }
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private TrialBalanceEntry() : base() { }
 
-    [Required]
-    [MaxLength(256)]
-    public string AccountName { get; init; }
-
-    [Required]
-    public AccountType Type { get; init; }
-
-    [MaxLength(256)]
-    public string? ParentCode { get; init; }
-
-    public decimal Debit { get; init; }
-    public decimal Credit { get; init; }
-
-    [Required]
-    [MaxLength(256)]
-    public string Normally { get; init; }
-
-    // Parameterless constructor for EF Core
-    private TrialBalanceEntry()
-    {
-        AccountID = string.Empty;
-        AccountName = string.Empty;
-        Type = AccountType.Asset;
-        ParentCode = null;
-        Normally = string.Empty;
-    }
-
-    // Private full constructor for validation and controlled creation
+    /// <summary>
+    /// Private full constructor for controlled creation and validation.
+    /// </summary>
+    /// <param name="accountID">The unique identifier for the account.</param>
+    /// <param name="accountName">The name of the account.</param>
+    /// <param name="type">The account type (Asset, Liability, Equity, Income, Expense, etc.).</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="debit">The debit amount for this trial balance entry.</param>
+    /// <param name="credit">The credit amount for this trial balance entry.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
     private TrialBalanceEntry(string accountID, string accountName, AccountType type, string? parentCode, decimal debit, decimal credit, string normally)
-    {
-        if (string.IsNullOrWhiteSpace(normally))
-            throw new ArgumentException($"'{nameof(normally)}' cannot be null or empty.", nameof(normally));
-        if (string.IsNullOrWhiteSpace(accountID))
-            throw new ArgumentException($"'{nameof(accountID)}' cannot be null or empty.", nameof(accountID));
-        if (string.IsNullOrWhiteSpace(accountName))
-            throw new ArgumentException($"'{nameof(accountName)}' cannot be null or empty.", nameof(accountName));
-        if (debit < 0)
-            throw new ArgumentOutOfRangeException(nameof(debit), "Debit cannot be negative.");
-        if (credit < 0)
-            throw new ArgumentOutOfRangeException(nameof(credit), "Credit cannot be negative.");
+        : base(accountID, accountName, type, parentCode, debit, credit, normally)
+    { }
 
-        AccountID = accountID;
-        AccountName = accountName;
-        Type = type;
-        ParentCode = string.IsNullOrWhiteSpace(parentCode) ? null : parentCode;
-        Debit = debit;
-        Credit = credit;
-        Normally = normally;
-    }
-
-    // Factory method for creation with validation
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="accountID">The unique identifier for the account.</param>
+    /// <param name="accountName">The name of the account.</param>
+    /// <param name="type">The account type (Asset, Liability, Equity, Income, Expense, etc.).</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="debit">The debit amount for this trial balance entry.</param>
+    /// <param name="credit">The credit amount for this trial balance entry.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
+    /// <returns>A new <see cref="TrialBalanceEntry"/> instance.</returns>
     public static TrialBalanceEntry Create(string accountID, string accountName, AccountType type, string? parentCode, decimal debit, decimal credit, string normally)
-        => new(accountID, accountName, type, parentCode, debit, credit, normally);
+        => new TrialBalanceEntry(accountID, accountName, type, parentCode, debit, credit, normally);
+
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="accountID">The unique identifier for the account.</param>
+    /// <param name="accountName">The name of the account.</param>
+    /// <param name="type">The account type (Asset, Liability, Equity, Income, Expense, etc.).</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="debit">The debit amount for this trial balance entry.</param>
+    /// <param name="credit">The credit amount for this trial balance entry.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
+    /// <returns>A new <see cref="TrialBalanceEntry"/> instance with the specified values.</returns>
+    protected override TrialBalanceEntry CreateInstance(string accountID, string accountName, AccountType type, string? parentCode, decimal debit, decimal credit, string normally)
+        => new TrialBalanceEntry(accountID, accountName, type, parentCode, debit, credit, normally);
 }

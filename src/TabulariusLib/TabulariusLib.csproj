@@ -3,9 +3,9 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>TabulariusLib</PackageId>
-    <Version>0.0.3</Version>
+    <Version>0.0.4</Version>
     <Authors>Michael Warneke</Authors>
-    <Description>Library to handle accounting journal entries</Description>
+    <Description>A .NET library to handle basic accounting tools to create a journal and accounts.</Description>
     <PackageTags>Accounting;Journal;Balance;Profit</PackageTags>
     <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/Tabularius/tabularius-lib-dotnet</PackageProjectUrl>

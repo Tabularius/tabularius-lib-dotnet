@@ -1,93 +1,66 @@
+/*
+ * JournalEntry.cs
+ * 
+ * Represents a concrete implementation of a journal entry entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable journal entry entity, inheriting from JournalEntryBase<JournalEntry, JournalLine>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
 
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
+using TabulariusLib.BaseEntities;
 
 namespace TabulariusLib.Entities;
 
+/// <summary>
+/// Represents a concrete journal entry entity in the Tabularius accounting library.
+/// Inherits from <see cref="JournalEntryBase{JournalEntry, JournalLine}"/> and provides factory methods for creation and mutation.
+/// </summary>
 [Table("JournalEntries")]
-public sealed record JournalEntry
+public sealed record JournalEntry : JournalEntryBase<JournalEntry, JournalLine>
 {
-    [Key]
-    [Required]
-    [MaxLength(256)]
-    public string JournalEntryID { get; init; }
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private JournalEntry() : base() { }
 
-    [Required]
-    [MaxLength(256)]
-    public string Description { get; init; }
-
-    [Required]
-    public DateTime Date { get; init; }
-
-    [Required]
-    [MaxLength(256)]
-    public string Reference { get; init; }
-
-    // EF Core needs a settable property for navigation, but we expose only the read-only collection
-    private readonly List<JournalLine> _journalLines /*{ get; init; }*/ = new();
-    public IReadOnlyCollection<JournalLine> JournalLines => _journalLines.AsReadOnly();
-
-    public bool IsBalanced => _journalLines.Sum(jl => jl.Debit) == _journalLines.Sum(jl => jl.Credit);
-
-    // Parameterless constructor for EF Core
-    private JournalEntry()
-    { 
-        JournalEntryID = string.Empty;
-        Description = string.Empty;
-        Reference = string.Empty;
-        Date = default;
-    }
-
-    // Private full constructor for validation and controlled creation
+    /// <summary>
+    /// Private full constructor for controlled creation with validation.
+    /// </summary>
+    /// <param name="journalEntryID">The unique identifier for the journal entry.</param>
+    /// <param name="description">The description of the journal entry.</param>
+    /// <param name="date">The date of the journal entry.</param>
+    /// <param name="reference">The reference string for the journal entry.</param>
+    /// <param name="lines">The collection of journal lines.</param>
     private JournalEntry(string journalEntryID, string description, DateTime date, string reference, IEnumerable<JournalLine> lines)
-    {
-        if (string.IsNullOrWhiteSpace(journalEntryID))
-            throw new ArgumentException($"'{nameof(journalEntryID)}' cannot be null or empty.", nameof(journalEntryID));
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-        if (string.IsNullOrWhiteSpace(reference))
-            throw new ArgumentException($"'{nameof(reference)}' cannot be null or empty.", nameof(reference));
-        if (date == default)
-            throw new ArgumentException($"'{nameof(date)}' cannot be empty.", nameof(date));
-        if (lines == null)
-            throw new ArgumentNullException(nameof(lines));
+        : base(journalEntryID, description, date, reference, lines)
+    { }
 
-        JournalEntryID = journalEntryID;
-        Description = description;
-        Date = date;
-        Reference = reference;
-        _journalLines = lines.ToList();
-    }
-
-    // Factory method for creation with validation
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="journalEntryID">The unique identifier for the journal entry.</param>
+    /// <param name="description">The description of the journal entry.</param>
+    /// <param name="date">The date of the journal entry.</param>
+    /// <param name="reference">The reference string for the journal entry.</param>
+    /// <param name="lines">The collection of journal lines. If null, an empty collection is used.</param>
+    /// <returns>A new <see cref="JournalEntry"/> instance.</returns>
     public static JournalEntry Create(string journalEntryID, string description, DateTime date, string reference, IEnumerable<JournalLine>? lines)
         => new(journalEntryID, description, date, reference, lines ?? Enumerable.Empty<JournalLine>());
 
-    // Mutation methods with validation
-    public JournalEntry WithDescription(string newDescription)
-        => Create(JournalEntryID, newDescription, Date, Reference, _journalLines);
-
-    public JournalEntry WithDate(DateTime newDate)
-        => Create(JournalEntryID, Description, newDate, Reference, _journalLines);
-
-    public JournalEntry WithReference(string newReference)
-        => Create(JournalEntryID, Description, Date, newReference, _journalLines);
-
-    public JournalEntry WithJournalLines(IEnumerable<JournalLine> newJournalLines)
-        => Create(JournalEntryID, Description, Date, Reference, newJournalLines);
-
-    public JournalEntry AddJournalLines(IEnumerable<JournalLine> newJournalLines)
-    {
-        if (newJournalLines == null)
-            throw new ArgumentNullException(nameof(newJournalLines));
-        return Create(JournalEntryID, Description, Date, Reference, _journalLines.Concat(newJournalLines));
-    }
-
-    public JournalEntry AddJournalLine(JournalLine journalLine)
-    {
-        if (journalLine == null)
-            throw new ArgumentNullException(nameof(journalLine));
-        return Create(JournalEntryID, Description, Date, Reference, _journalLines.Append(journalLine));
-    }
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="journalEntryID">The unique identifier for the journal entry.</param>
+    /// <param name="description">The description of the journal entry.</param>
+    /// <param name="date">The date of the journal entry.</param>
+    /// <param name="reference">The reference string for the journal entry.</param>
+    /// <param name="lines">The collection of journal lines.</param>
+    /// <returns>A new <see cref="JournalEntry"/> instance with the specified values.</returns>
+    protected override JournalEntry CreateInstance(string journalEntryID, string description, DateTime date, string reference, IEnumerable<JournalLine> lines)
+        => new JournalEntry(journalEntryID, description, date, reference, lines);
 }
