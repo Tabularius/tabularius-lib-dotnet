@@ -1,68 +1,93 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+/*
+ * LedgerAccount.cs
+ * 
+ * Represents a concrete implementation of a ledger account entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable ledger account entity, inheriting from LedgerAccountBase<LedgerAccount, LedgerEntry>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
 
+using System.ComponentModel.DataAnnotations.Schema;
+using TabulariusLib.BaseEntities;
 
 namespace TabulariusLib.Entities;
 
+/// <summary>
+/// Represents a concrete ledger account entity in the Tabularius accounting library.
+/// Inherits from <see cref="LedgerAccountBase{LedgerAccount, LedgerEntry}"/> and provides factory methods for creation and mutation.
+/// </summary>
 [Table("LedgerAccounts")]
-public sealed record LedgerAccount
+public sealed record LedgerAccount : LedgerAccountBase<LedgerAccount, LedgerEntry>
 {
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private LedgerAccount() : base() { }
 
-    [Key]
-    [Required]
-    [MaxLength(256)]
-    public required string Code { get; init; }
+    /// <summary>
+    /// Private full constructor for controlled creation and validation.
+    /// </summary>
+    /// <param name="code">The unique code for the ledger account.</param>
+    /// <param name="name">The name of the ledger account.</param>
+    /// <param name="type">The account type (Asset, Liability, etc.).</param>
+    /// <param name="description">The description of the ledger account.</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
+    /// <param name="lines">The collection of ledger entries.</param>
+    private LedgerAccount(
+        string code,
+        string name,
+        AccountType type,
+        string description,
+        string parentCode,
+        string normally,
+        IEnumerable<LedgerEntry> lines)
+        : base(code, name, type, description, parentCode, normally, lines)
+    { }
 
-    [Required]
-    [MaxLength(256)]
-    public required string Name { get; init; }
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="code">The unique code for the ledger account.</param>
+    /// <param name="name">The name of the ledger account.</param>
+    /// <param name="type">The account type (Asset, Liability, etc.).</param>
+    /// <param name="description">The description of the ledger account.</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
+    /// <param name="lines">The collection of ledger entries. If null, an empty collection is used.</param>
+    /// <returns>A new <see cref="LedgerAccount"/> instance.</returns>
+    public static LedgerAccount Create(
+        string code,
+        string name,
+        AccountType type,
+        string description,
+        string parentCode,
+        string normally,
+        IEnumerable<LedgerEntry>? lines)
+        => new LedgerAccount(code, name, type, description, parentCode, normally, lines ?? Enumerable.Empty<LedgerEntry>());
 
-    [Required]
-    [MaxLength(256)]
-    public required string ParentCode { get; init; }
-
-    [Required]
-    [MaxLength(256)]
-    public required string Normally { get; init; }
-
-    [Required]
-    public required AccountType Type { get; init; }
-
-    [Required]
-    [MaxLength(256)]
-    public required string Description { get; init; }
-
-    internal List<LedgerEntry> _ledgerEntries = new();
-    public IReadOnlyCollection<LedgerEntry> LedgerEntries => _ledgerEntries.AsReadOnly();
-
-    public decimal Credit => _ledgerEntries.Sum(entry => entry.Credit);
-    public decimal Debit => _ledgerEntries.Sum(entry => entry.Debit);
-    public decimal Balance => Credit - Debit;
-    private LedgerAccount() { }
-    public static LedgerAccount Create(string code, string name, AccountType type, string description, string parentCode, string normally, IEnumerable<LedgerEntry>? lines)
-    {
-        if (string.IsNullOrEmpty(code))
-            throw new ArgumentException($"'{nameof(code)}' cannot be null or empty.", nameof(code));
-        if (string.IsNullOrEmpty(name))
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-        if (string.IsNullOrEmpty(description))
-            throw new ArgumentException($"'{nameof(description)}' cannot be null or empty.", nameof(description));
-        if (string.IsNullOrEmpty(parentCode))
-            parentCode = string.Empty;
-        if (string.IsNullOrEmpty(normally))
-            throw new ArgumentException($"'{nameof(normally)}' cannot be null or empty.", nameof(normally));
-        if (lines == null)
-            lines = Enumerable.Empty<LedgerEntry>();
-
-        return new LedgerAccount
-        {
-            Code = code,
-            Name = name,
-            Type = type,
-            Description = description,
-            ParentCode = parentCode,
-            Normally = normally,
-            _ledgerEntries = lines.ToList()
-        };
-    }
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="code">The unique code for the ledger account.</param>
+    /// <param name="name">The name of the ledger account.</param>
+    /// <param name="type">The account type (Asset, Liability, etc.).</param>
+    /// <param name="description">The description of the ledger account.</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
+    /// <param name="lines">The collection of ledger entries.</param>
+    /// <returns>A new <see cref="LedgerAccount"/> instance with the specified values.</returns>
+    protected override LedgerAccount CreateInstance(
+        string code,
+        string name,
+        AccountType type,
+        string description,
+        string parentCode,
+        string normally,
+        IEnumerable<LedgerEntry> lines)
+        => new LedgerAccount(code, name, type, description, parentCode, normally, lines);
 }

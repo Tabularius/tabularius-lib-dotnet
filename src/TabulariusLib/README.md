@@ -1,16 +1,49 @@
 # TabulariusLib
 
-A .NET library to handle basic accounting tools to create a journal and accounts. 
+A .NET library to handle basic accounting tools to create a journal and accounts.
 
 ## Features
-With the journals and accounts you can generate the ledger, trial balance and then the financial statements as of balance sheet and profit and loss statement.
 
-This is an early version and you can contribute to it on github.
-https://github.com/Tabularius/tabularius-lib-dotnet
+- Immutable, strongly-typed accounting entities
+- Generate ledgers, trial balances, profit and loss statements, and balance sheets
+- Designed for use with Entity Framework Core
+- Fully unit-tested
 
-## How to use (taken from unit tests)
-### Create Account codes
+## Accounting
+
+TabulariusLib is built on core accounting principles:
+
+- **Immutability:** All main entities (Journal, Ledger, Trial Balance, Profit and Loss Statement, Balance Sheet) are immutable. Once created, they cannot be changed—only new entries can be added. This mirrors real-world accounting, where journals and ledgers are append-only and cannot be altered retroactively.
+- **Entity Dependencies:**  
+  - The **Trial Balance** is always derived from the current state of the **Ledger**.
+  - The **Balance Sheet** is generated from the **Trial Balance** after it has been closed (i.e., after income and expense accounts are closed to equity).
+  - The **Profit and Loss Statement** is generated directly from the **Ledger** for a given period.
+- **Validation:** All mutation methods return new instances and enforce validation, ensuring data integrity and auditability.
+
+## Installation
+
+Install from NuGet:
+
 ```
+dotnet add package TabulariusLib
+```
+
+## Requirements
+
+- .NET 7.0 or later
+
+## Usage
+
+Add the required namespaces:
+
+```csharp
+using TabulariusLib.Entities;
+using TabulariusLib.BaseEntities;
+```
+
+### Create Account Codes
+
+```csharp
 public static class ExampleAccountCodes
 {
     public const string Cash = "1000";
@@ -21,8 +54,10 @@ public static class ExampleAccountCodes
     public const string Payable = "2000";
 }
 ```
+
 ### Create Accounts
-```
+
+```csharp
 public static List<Account> GetExampleAccounts()
 {
     return new List<Account>
@@ -36,8 +71,10 @@ public static List<Account> GetExampleAccounts()
     };
 }
 ```
-### Create Journal
-```
+
+### Create a Journal
+
+```csharp
 public static Journal GetExampleJournal()
 {
     var accounts = GetExampleAccounts();
@@ -106,25 +143,38 @@ public static Journal GetExampleJournal()
     return journal;
 }
 ```
-### Create Ledger
-```
+
+### Create a Ledger
+
+```csharp
 Ledger ledger = Ledger.FromJournal("Main Ledger", "Test Ledger", journal, accounts);
 ```
-### Create Trial Balance
-```
+
+### Create a Trial Balance
+
+```csharp
 TrialBalance trialBalance = TrialBalance.FromLedger("TB", "Test TB", new DateTime(2024, 12, 31), ledger);
 ```
 
-### Create Profit and Loss Statement
+### Create a Profit and Loss Statement
+
+```csharp
+ProfitAndLossStatement plStatement = ProfitAndLossStatement.FromLedger(
+    "P&L", "Test P&L", new DateTime(2024, 1, 1), new DateTime(2024, 12, 31), ledger);
 ```
-ProfitAndLossStatement plStatement = ProfitAndLossStatement.FromLedger("P&L", "Test P&L", new DateTime(2024, 1, 1), new DateTime(2024, 12, 31), ledger);
-```
-### Create Balance Sheet
-```
-TrialBalance closedTrialBalance = trialBalance.CloseAccounts(retainedEarnings); // The equity account for the P&L closing
+
+### Create a Balance Sheet
+
+```csharp
+TrialBalance closedTrialBalance = trialBalance.CloseAccounts(
+    accounts.Find(a => a.Code == ExampleAccountCodes.RetainedEarnings)!);
 
 // Create Balance from closed trial balance
 Balance balance = Balance.FromTrialBalance("Balance Sheet", "Test Balance", DateTime.Today, closedTrialBalance);
 ```
+
 ## License
+
 Apache-2.0
+
+---

@@ -1,50 +1,42 @@
+/*
+ * Account.cs
+ * 
+ * Represents a concrete implementation of an account entity in the Tabularius accounting library.
+ * 
+ * This record provides a strongly-typed, immutable account entity, inheriting from AccountBase<Account>.
+ * It enforces validation, supports mutation methods that return new instances, and is designed for use with Entity Framework Core.
+ * 
+ * License: Apache-2.0
+ * Author: Michael Warneke
+ * Copyright 2025 Michael Warneke
+ */
 
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
-using TabulariusLib.Interfaces;
+using TabulariusLib.BaseEntities;
 
 namespace TabulariusLib.Entities;
 
+/// <summary>
+/// Represents a concrete account entity in the Tabularius accounting library.
+/// Inherits from <see cref="AccountBase{Account}"/> and provides factory methods for creation and mutation.
+/// </summary>
 [Table("Accounts")]
-public sealed record Account : IAccount
+public sealed record Account : AccountBase<Account>
 {
-    [Key]
-    [Required]
-    [MaxLength(256)]
-    public string Code { get; init; }
+    /// <summary>
+    /// Private parameterless constructor for EF Core.
+    /// </summary>
+    private Account() : base() { }
 
-    [Required]
-    [MaxLength(256)]
-    public string Name { get; init; }
-    
-    [Required]
-    [MaxLength(256)]
-    public string Description { get; init; }
-        
-    [Required]
-    [MaxLength(256)]
-    public AccountType Type { get; init; }
-    
-    [MaxLength(256)]
-    public string? ParentCode { get; init; }
-    
-    [Required]
-    [MaxLength(256)]
-    public string Normally { get; init; }
-
-    // Parameterless constructor for EF Core
-    private Account()
-    {
-        Name = string.Empty;
-        Description = string.Empty;
-        Code = string.Empty;
-        Type = AccountType.Asset;
-        ParentCode = null;
-        Normally = string.Empty;
-    }
-
-    // Private full constructor for validation
+    /// <summary>
+    /// Private full constructor for controlled creation and validation.
+    /// </summary>
+    /// <param name="name">The name of the account.</param>
+    /// <param name="description">The description of the account.</param>
+    /// <param name="code">The unique code for the account.</param>
+    /// <param name="type">The account type (Asset, Liability, etc.).</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
     private Account(
         string name,
         string description,
@@ -52,28 +44,19 @@ public sealed record Account : IAccount
         AccountType type,
         string? parentCode,
         string normally)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-        if (string.IsNullOrWhiteSpace(description))
-            throw new ArgumentException($"'{nameof(description)}' cannot be null or empty for account {name}.", nameof(description));
-        if (string.IsNullOrWhiteSpace(code))
-            throw new ArgumentException($"'{nameof(code)}' cannot be null or empty.", nameof(code));
-        if (!Enum.IsDefined(typeof(AccountType), type))
-            throw new ArgumentException($"'{nameof(type)}' must be a valid AccountType.", nameof(type));
-        // ParentCode can be null or whitespace, so no validation here
-        if (string.IsNullOrWhiteSpace(normally))
-            throw new ArgumentException($"'{nameof(normally)}' cannot be null or empty.", nameof(normally));
+        : base(name, description, code, type, parentCode, normally)
+    { }
 
-        Name = name;
-        Description = description;
-        Code = code;
-        Type = type;
-        ParentCode = string.IsNullOrWhiteSpace(parentCode) ? null : parentCode;
-        Normally = normally;
-    }
-
-    // Factory method for creation with validation
+    /// <summary>
+    /// Factory method for creation with validation.
+    /// </summary>
+    /// <param name="name">The name of the account.</param>
+    /// <param name="description">The description of the account.</param>
+    /// <param name="code">The unique code for the account.</param>
+    /// <param name="type">The account type (Asset, Liability, etc.).</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
+    /// <returns>A new <see cref="Account"/> instance.</returns>
     public static Account Create(
         string name,
         string description,
@@ -81,24 +64,18 @@ public sealed record Account : IAccount
         AccountType type,
         string? parentCode,
         string normally)
-        => new(name, description, code, type, parentCode, normally);
+        => new Account(name, description, code, type, parentCode, normally);
 
-    // Change methods (immutably create new validated Account)
-    public Account WithType(AccountType newType) =>
-        Create(Name, Description, Code, newType, ParentCode, Normally);
-
-    public Account WithName(string newName) =>
-        Create(newName ?? Name, Description, Code, Type, ParentCode, Normally);
-
-    public Account WithDescription(string newDescription) =>
-        Create(Name, newDescription ?? Description, Code, Type, ParentCode, Normally);
-
-    public Account WithCode(string newCode) =>
-        Create(Name, Description, newCode ?? Code, Type, ParentCode, Normally);
-
-    public Account WithParentCode(string? newParentCode) =>
-        Create(Name, Description, Code, Type, newParentCode, Normally);
-
-    public Account WithNormally(string newNormally) =>
-        Create(Name, Description, Code, Type, ParentCode, newNormally ?? Normally);
+    /// <summary>
+    /// Implementation of the abstract factory method for mutation methods.
+    /// </summary>
+    /// <param name="name">The name of the account.</param>
+    /// <param name="description">The description of the account.</param>
+    /// <param name="code">The unique code for the account.</param>
+    /// <param name="type">The account type (Asset, Liability, etc.).</param>
+    /// <param name="parentCode">The parent account code, if any.</param>
+    /// <param name="normally">Indicates whether the account is normally Debit or Credit.</param>
+    /// <returns>A new <see cref="Account"/> instance with the specified values.</returns>
+    protected override Account CreateInstance(string name, string description, string code, AccountType type, string? parentCode, string normally)
+        => new Account(name, description, code, type, parentCode, normally);
 }

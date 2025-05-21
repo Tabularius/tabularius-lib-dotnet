@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+
+using TabulariusLib.BaseEntities;
 using TabulariusLib.Entities;
 
 namespace UnitTests.TabulariusLib;
@@ -32,13 +34,11 @@ public static class ExampleData
     public static Journal GetExampleJournal()
     {
         var accounts = GetExampleAccounts();
-        var cash = accounts.Find(a => a.Code == ExampleAccountCodes.Cash);
-        var revenue = accounts.Find(a => a.Code == ExampleAccountCodes.Revenue);
-        var expense = accounts.Find(a => a.Code == ExampleAccountCodes.Expense);
-        var capital = accounts.Find(a => a.Code == ExampleAccountCodes.Capital);
-        var payable = accounts.Find(a => a.Code == ExampleAccountCodes.Payable);
-        if (cash == null || revenue == null || expense == null || capital == null || payable == null)
-            throw new InvalidOperationException("One or more required accounts are missing.");
+        var cash = accounts.Find(a => a.Code == ExampleAccountCodes.Cash)!;
+        var revenue = accounts.Find(a => a.Code == ExampleAccountCodes.Revenue)!;
+        var expense = accounts.Find(a => a.Code == ExampleAccountCodes.Expense)!;
+        var capital = accounts.Find(a => a.Code == ExampleAccountCodes.Capital)!;
+        var payable = accounts.Find(a => a.Code == ExampleAccountCodes.Payable)!;
 
         var journal = Journal.Create(Guid.NewGuid(), "Main Journal", "Test Journal", null);
 
@@ -49,10 +49,11 @@ public static class ExampleData
                 "Sales Invoice",
                 DateTime.Today,
                 "INV-001",
-                [
+                new[]
+                {
                     JournalLine.Create(Guid.NewGuid(), "Cash from Sales", cash.Code, 1000m, 0m),
                     JournalLine.Create(Guid.NewGuid(), "Sales Revenue", revenue.Code, 0m, 1000m)
-                ]
+                }
             ));
 
         // Expense: Debit Expense, Credit Cash
@@ -62,10 +63,11 @@ public static class ExampleData
                 "Office Supplies Expense",
                 DateTime.Today,
                 "EXP-001",
-                [
+                new[]
+                {
                     JournalLine.Create(Guid.NewGuid(), "Office Supplies", expense.Code, 200m, 0m),
                     JournalLine.Create(Guid.NewGuid(), "Paid Cash", cash.Code, 0m, 200m)
-                ]
+                }
             ));
 
         // Owner's Investment: Debit Cash, Credit Capital
@@ -75,10 +77,11 @@ public static class ExampleData
                 "Owner's Investment",
                 DateTime.Today,
                 "CAP-001",
-                [
+                new[]
+                {
                     JournalLine.Create(Guid.NewGuid(), "Cash Invested", cash.Code, 5000m, 0m),
                     JournalLine.Create(Guid.NewGuid(), "Owner's Capital", capital.Code, 0m, 5000m)
-                ]
+                }
             ));
 
         // Liability: Purchase on Credit (Debit Expense, Credit Payable)
@@ -88,10 +91,11 @@ public static class ExampleData
                 "Office Supplies on Credit",
                 DateTime.Today,
                 "EXP-002",
-                [
+                new[]
+                {
                     JournalLine.Create(Guid.NewGuid(), "Office Supplies (Credit)", expense.Code, 300m, 0m),
                     JournalLine.Create(Guid.NewGuid(), "Accounts Payable", payable.Code, 0m, 300m)
-                ]
+                }
             ));
 
         return journal;
@@ -113,10 +117,11 @@ public static class ExampleData
                 "Revenue Entry 0",
                 new DateTime(2023, 12, 31),
                 "REF-000",
-                [
+                new[]
+                {
                     JournalLine.Create(Guid.NewGuid(), "Sales Revenue", revenue.Code, 0m, 500m),
                     JournalLine.Create(Guid.NewGuid(), "Cash", cash.Code, 500m, 0m)
-                ]
+                }
             ));
 
         // Entry 1: Date = 2024-01-01 (should be included)
@@ -126,10 +131,11 @@ public static class ExampleData
                 "Revenue Entry 1",
                 new DateTime(2024, 1, 1),
                 "REF-001",
-                [
+                new[]
+                {
                     JournalLine.Create(Guid.NewGuid(), "Sales Revenue", revenue.Code, 0m, 100m),
                     JournalLine.Create(Guid.NewGuid(), "Cash", cash.Code, 100m, 0m)
-                ]
+                }
             ));
 
         // Entry 2: Date = 2024-06-01 (should be included)
@@ -139,10 +145,11 @@ public static class ExampleData
                 "Expense Entry 1",
                 new DateTime(2024, 6, 1),
                 "REF-002",
-                [
+                new[]
+                {
                     JournalLine.Create(Guid.NewGuid(), "Office Supplies", expense.Code, 50m, 0m),
                     JournalLine.Create(Guid.NewGuid(), "Cash", cash.Code, 0m, 50m)
-                ]
+                }
             ));
 
         // Entry 3: Date = 2025-05-17 (should be excluded)
@@ -152,10 +159,11 @@ public static class ExampleData
                 "Revenue Entry 2",
                 new DateTime(2025, 5, 17),
                 "REF-003",
-                [
+                new[]
+                {
                     JournalLine.Create(Guid.NewGuid(), "Sales Revenue", revenue.Code, 0m, 200m),
                     JournalLine.Create(Guid.NewGuid(), "Cash", cash.Code, 200m, 0m)
-                ]
+                }
             ));
 
         return journal;

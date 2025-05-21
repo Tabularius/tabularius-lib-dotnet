@@ -1,4 +1,6 @@
 using System;
+
+using TabulariusLib.BaseEntities;
 using TabulariusLib.Entities;
 
 using Xunit;
